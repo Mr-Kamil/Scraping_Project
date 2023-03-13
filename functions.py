@@ -5,16 +5,18 @@ import re
 import csv
 import os
 import json
+import pandas as pd
 
 today = str(datetime.datetime.today())[:-7]
 
 
-def get_data_from_web(next_page: str, scrapping_dictionary: dict, proxy_url: str, api_key: str) -> list[dict, ..., dict]:  # scraps websites and returns a list of dictionaries with wanted elements,
+def get_data_from_web(next_page: str, scrapping_dictionary: dict, proxy_url: str, api_key: str) -> list[dict, ..., dict]:
+    # scraps websites and returns a list of dictionaries with wanted elements,
     # scrapping dictionary provides names of html elements that we want to scrap
     results = []
 
     if re.search(r'allegro\.pl', next_page):
-        page = requests.get(url='https://proxy.scrapeops.io/v1/', params={'api_key': 'd6ff2897-f7d1-40c0-8859-15dcb1d0d177', 'url': next_page})
+        page = requests.get(url=proxy_url, params={'api_key': api_key, 'url': next_page})
     else:
         page = requests.get(next_page)
 
@@ -37,56 +39,81 @@ def get_data_from_web(next_page: str, scrapping_dictionary: dict, proxy_url: str
     return results
 
 
-def remove_duplicates(dictionary_list: list[dict, ..., dict]) -> list[dict, ..., dict]:  # remove duplicates from the list, checks only urls
+def remove_duplicates(dictionary_list: list[dict, ..., dict], headers: list) -> list[dict, ..., dict]:
+    # remove duplicates from the list, checks only urls
     no_duplicates_list = []
     temp = []
     for dictionary in dictionary_list:
-        if dictionary['LINK'] not in temp:
+        if dictionary[headers[2]] not in temp:
             no_duplicates_list.append(dictionary)
-            temp.append(dictionary['LINK'])
+            temp.append(dictionary[headers[2]])
 
     return no_duplicates_list
 
 
-def csv_to_dict_list(file_path: str) -> list:  # returns a list of links from an existing file which are later comparing with a new list in order to avoid duplicates
+def csv_to_dict_list(file_path: str, headers: list) -> list:
+    # returns a list of occasions ID (link + price) from an existing file which are later comparing with a new list in order to avoid duplicates
     csv_input = open(file_path, 'r', newline='', encoding='utf-8')
     reader = csv.DictReader(csv_input)
 
-    return [row["LINK"] for row in reader]
+    return [row[headers[2]] + row[headers[1]] for row in reader]
 
 
-def write_data(data_file_path: str, data_list_with_duplicates: list, fieldnames: list) -> None:  # append new lines to an existing file or create a new one
+def write_data(data_file_path: str, data_list_with_duplicates: list, headers: list, sheet_name: str) -> None:
+    # append new lines to an existing file or create a new one
     # uses functions: csv_to_dict_list, remove_duplicates
-    data_list = remove_duplicates(data_list_with_duplicates)
+    data_list = remove_duplicates(data_list_with_duplicates, headers)
     output_list = []
     exists = False
 
     if os.path.exists(data_file_path):
-        reader_list = csv_to_dict_list(data_file_path)
+        reader_list = csv_to_dict_list(data_file_path, headers)
         exists = True
 
     with open(data_file_path, 'a', newline='', encoding='utf-8') as data_file_csv_write:
-        writer = csv.DictWriter(data_file_csv_write, fieldnames=fieldnames, lineterminator='\n')
+        writer = csv.DictWriter(data_file_csv_write, fieldnames=headers, lineterminator='\n')
 
         if not exists:
             writer.writeheader()
-        writer.writerow({'DATA': today})
+        writer.writerow({headers[3]: today})
 
         for data_list_row in data_list:
             if exists:
-                if data_list_row['LINK'] not in reader_list:
+                if data_list_row[headers[2]] + str(data_list_row[headers[1]]) not in reader_list:
                     output_list.append(data_list_row)
             else:
                 output_list.append(data_list_row)
+
+        make_xlsx_file(output_list, data_file_path, sheet_name)
 
         for output_list_row in output_list:
             writer.writerow(output_list_row)
 
 
-def get_laptops_occasions(url: list[str, int, str], scrapping_dictionary: dict, searching_dictionary: dict, base_url: str,
-                          headers: list, proxy_url: str, api_key: str, restricted_max_page: bool or int) -> list[dict, ..., dict]:
-    # prepares arguments for the get_data_from_web function, checks if scraped data includes searched contain, creates a list with possibly duplicates
-    # uses functions: get_data_from_web
+def make_xlsx_file(input_data: list[dict, ..., dict], data_file_path: str, sheet_name: str) -> None:
+    # creates xlsx file with only the newest occasions
+    df = pd.DataFrame(input_data)
+    writer = pd.ExcelWriter('new_' + data_file_path.split('.')[0] + '.xlsx', engine='xlsxwriter')
+    df.to_excel(writer, index=False, sheet_name=sheet_name)
+
+    for i, column in enumerate(df.columns):
+        column_width = max(df[column].astype(str).map(len).max(), len(column)) + 1
+        writer.sheets[sheet_name].set_column(i, i, column_width)
+
+    writer.save()
+
+
+def check_titles_for_unwanted_expressions(title: str, unwanted_expressions: list) -> bool:
+    for expression in unwanted_expressions:
+        if re.search(expression, title, re.IGNORECASE):
+            return False
+    return True
+
+
+def get_laptops_occasions(url: list[str, int, str], scrapping_dictionary: dict, searching_dictionary: dict, base_url: str, headers: list,
+                          proxy_url: str, api_key: str, unwanted_expressions: list, restricted_max_page: bool or int) -> list[dict, ..., dict]:
+    # prepares arguments for the get_data_from_web function, checks if scraped data includes searched contents, creates a list with possibly duplicates
+    # uses functions: get_data_from_web, check_titles_for_unwanted_expressions
     page_num = 0
     occasions_list = []
 
@@ -102,14 +129,14 @@ def get_laptops_occasions(url: list[str, int, str], scrapping_dictionary: dict, 
             else:
                 max_page = int(max_pages[-1]) if (type(max_pages) == list and len(max_pages) > 1) else max_pages
 
-        if re.search(r'allegro\.pl', next_page) and page_num == 10:  # scrap only pages 0-10 and 55-70
+        if re.search(r'allegro\.pl', next_page) and page_num == 10:  # scrap allegro.pl only for pages 0-10 and 55-70
             page_num = 55
             max_page = 70
 
         for n in range(len(titles)):
-            if not re.search('3050U', titles[n].upper()):
+            if check_titles_for_unwanted_expressions(titles[n], unwanted_expressions):
                 for position in searching_dictionary:
-                    if re.search(searching_dictionary[position][0].lower(), titles[n].lower()):
+                    if re.search(searching_dictionary[position][0], titles[n], re.IGNORECASE):
                         try:
                             price = int(re.match(r'\d+', prices[n].replace(' ', '')).group(0))
                         except:

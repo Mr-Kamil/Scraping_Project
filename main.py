@@ -2,23 +2,12 @@ from functions import write_data, get_laptops_occasions
 from proxy_data import proxy_url, api_key
 
 """
-this program is a scrapper, it scraps offers data from allegro.pl, allegrolokalnie.pl, olx.pl and if some offer is interesting 
-(it,s an offer of a product we're looking for and the price of the product is acceptable) stores received data in a csv file
-data scraping is legal but allegro.pl is blocking it, so to make it works this scrapper uses https://proxy.scrapeops.io/v1/ 
-to constantly changing IP address while getting data from allegro.pl
-
-HEADERS - headers columns in the csv file and dictionary keys
-searching_data_dict - it contain expressions which we are searching in data
-data_file - file to store scraped data
-base_url_... - the base of url address, using to create new urls
-urls_... - url address which we want to scrap for data
-scrapping_data_html_dict_... - contains names of html elements that we want to scrap
-"""
-
-"""
 common variables
 """
 HEADERS = ['TYTUŁ', 'CENA', 'LINK', 'DATA']
+SHEET_NAME = 'Laptopy'
+
+unwanted_expressions_in_titles = ['3050u', 'komputer', 'karta graficzna', 'stacjonarny', 'N3060']
 
 searching_data_dict = {'RTX 3070': ['3070', 4600],
                        'RTX 3060': ['3060', 3600],
@@ -36,8 +25,7 @@ searching_data_dict = {'RTX 3070': ['3070', 4600],
                        'MSI Stealth': ['Stealth', 3500],
                        'Radeon 6600M': ['6600M', 3800],
                        'Radeon 6700M': ['6700M', 4200],
-                       'Radeon 6800M': ['6800M', 4600]
-                       }
+                       'Radeon 6800M': ['6800M', 4600]}
 
 data_file = 'laptop_occasions.csv'
 
@@ -73,8 +61,10 @@ olx variables
 
 base_url_olx = 'https://www.olx.pl/'
 
-urls_olx = [['https://www.olx.pl/elektronika/komputery/laptopy/warszawa/?page=', 2, '&search%5Bdist%5D=30&search%5Bfilter_float_price%3Afrom%5D=1400&search%5Bfilter_float_price%3Ato%5D=5000&search%5Border%5D=created_at%3Adesc'],
-            ['https://www.olx.pl/elektronika/komputery/laptopy/q-msi/?page=', 2, '&search%5Bfilter_float_price%3Afrom%5D=1000&search%5Bfilter_float_price%3Ato%5D=5000&search%5Border%5D=created_at%3Adesc']]
+urls_olx = [['https://www.olx.pl/elektronika/komputery/laptopy/warszawa/?page=', 2,
+             '&search%5Bdist%5D=30&search%5Bfilter_float_price%3Afrom%5D=1400&search%5Bfilter_float_price%3Ato%5D=5000&search%5Border%5D=created_at%3Adesc'],
+            ['https://www.olx.pl/elektronika/komputery/laptopy/q-msi/?page=', 2,
+             '&search%5Bfilter_float_price%3Afrom%5D=1000&search%5Bfilter_float_price%3Ato%5D=5000&search%5Border%5D=created_at%3Adesc']]
 
 scrapping_data_html_dict_olx = {'titles': ['h6', 'css-16v5mdi er34gjf0'],
                                 'prices': ['p', 'css-10b0gli er34gjf0'],
@@ -82,25 +72,24 @@ scrapping_data_html_dict_olx = {'titles': ['h6', 'css-16v5mdi er34gjf0'],
                                 'max_page': ['a', "css-1mi714g"]}
 
 
+arguments_list = [[urls_olx, (scrapping_data_html_dict_olx, searching_data_dict, base_url_olx, HEADERS,
+                              proxy_url, api_key, unwanted_expressions_in_titles, False)],
+                  [urls_all_lok, [scrapping_data_html_dict_all_lok, searching_data_dict, base_url_all_lok, HEADERS,
+                                  proxy_url, api_key, unwanted_expressions_in_titles, 20]],
+                  [urls_allegro, [scrapping_data_html_dict_allegro, searching_data_dict, base_url_allegro, HEADERS,
+                                  proxy_url, api_key, unwanted_expressions_in_titles, False]]]
+
+
 def main():
     occasion_list = []
 
-    for url in urls_olx:
-        laptops_occasions = get_laptops_occasions(url, scrapping_data_html_dict_olx, searching_data_dict, base_url_olx, HEADERS, proxy_url, api_key,  restricted_max_page=False)
-        for occasion in laptops_occasions:
-            occasion_list.append(occasion)
+    for arguments in arguments_list:
+        for url in arguments[0]:
+            laptops_occasions = get_laptops_occasions(url, *arguments[1])
+            for occasion in laptops_occasions:
+                occasion_list.append(occasion)
 
-    for url in urls_all_lok:
-        laptops_occasions = get_laptops_occasions(url, scrapping_data_html_dict_all_lok, searching_data_dict, base_url_all_lok, HEADERS, proxy_url, api_key, restricted_max_page=20)
-        for occasion in laptops_occasions:
-            occasion_list.append(occasion)
-
-    for url in urls_allegro:
-        laptops_occasions = get_laptops_occasions(url, scrapping_data_html_dict_allegro, searching_data_dict, base_url_allegro, HEADERS, proxy_url, api_key, restricted_max_page=False)
-        for occasion in laptops_occasions:
-            occasion_list.append(occasion)
-
-    write_data(data_file, occasion_list, HEADERS)
+    write_data(data_file, occasion_list, HEADERS, SHEET_NAME)
     print('ALL DONE')
 
 
