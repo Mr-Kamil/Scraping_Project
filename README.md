@@ -6,11 +6,12 @@ to constantly changing IP address while getting data from allegro.pl.
 <br />
 <br />
 <br />Variables in main.py are as follows:
-<br />
+<br />Common:
 <br />HEADERS - columns headers in the csv file and dictionary keys
 <br />SHEET_NAME - the name of sheet in the data_file
 <br />unwanted_expressions_in_titles - expressions that should not appear in the scraped data occasions
 <br />searching_data_dict - expressions that the program is searching for in the  data
+<br />Different for every website:
 <br />base_url_... - the base url address, using to create new urls
 <br />urls_... - urls to scrape for data
 <br />scrapping_data_html_dict_... - names of HTML elements that the program is scraping
