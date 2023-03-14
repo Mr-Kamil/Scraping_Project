@@ -3,10 +3,10 @@ This program scraps offer data from allegro.pl, allegrolokalnie.pl, olx.pl and i
 Data scraping is legal but allegro.pl is blocking it, so to make it works this scraper uses https://scrapeops.io/
 to constantly changing IP address while getting data from allegro.pl. 
 The whole occasions data are stored in laptop_occasions.csv and the newest occasions are stored in new_laptop_occasions.xlsx
-
-
-Variables in main.py:
-
+<br />
+<br />
+<br />Variables in main.py:
+<br />
 <br />HEADERS - columns headers in the csv file and dictionary keys
 <br />SHEET_NAME - name of sheet in our data_file
 <br />unwanted_expressions_in_titles - contains expressions which we dont want in our data occasions
