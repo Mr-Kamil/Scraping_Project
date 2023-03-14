@@ -9,6 +9,7 @@ SHEET_NAME = 'Laptopy'
 
 unwanted_expressions_in_titles = ['3050u', 'komputer', 'karta graficzna', 'stacjonarny', 'N3060']
 
+# first argument: a search word, second argument: the maximum acceptable price
 searching_data_dict = {'RTX 3070': ['3070', 4600],
                        'RTX 3060': ['3060', 3600],
                        'RTX 3050': ['3050', 2900],
