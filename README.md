@@ -1,4 +1,4 @@
-This program scrapes offer data from allegro.pl, allegrolokalnie.pl and olx.pl If an offer is interesting (it's an offer for a product the user is looking for and the price is acceptable) stores received data in a csv file.
+This program scrapes offer data from allegro.pl, allegrolokalnie.pl and olx.pl .If an offer is interesting (it's an offer for a product the user is looking for and the price is acceptable) the program stores received data in a csv file.
 <br />Data scraping is legal but allegro.pl is blocking it, so to get around this, this scraper uses https://scrapeops.io/
 to constantly changing IP address while getting data from allegro.pl. 
 <br />
