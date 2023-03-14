@@ -11,8 +11,8 @@ today = str(datetime.datetime.today())[:-7]
 
 
 def get_data_from_web(next_page: str, scrapping_dictionary: dict, proxy_url: str, api_key: str) -> list[dict, ..., dict]:
-    # scraps websites and returns a list of dictionaries with wanted elements,
-    # scrapping dictionary provides names of html elements that we want to scrap
+    # scrapes websites and returns a list of dictionaries containing desired elements,
+    # scrapping_dictionary provides names of html elements that we want to scrap
     results = []
 
     if re.search(r'allegro\.pl', next_page):
@@ -40,7 +40,7 @@ def get_data_from_web(next_page: str, scrapping_dictionary: dict, proxy_url: str
 
 
 def remove_duplicates(dictionary_list: list[dict, ..., dict], headers: list) -> list[dict, ..., dict]:
-    # remove duplicates from the list, checks only urls
+    # removes duplicates from the list, checks only urls
     no_duplicates_list = []
     temp = []
     for dictionary in dictionary_list:
@@ -52,7 +52,7 @@ def remove_duplicates(dictionary_list: list[dict, ..., dict], headers: list) -> 
 
 
 def csv_to_dict_list(file_path: str, headers: list) -> list:
-    # returns a list of occasions ID (link + price) from an existing file which are later comparing with a new list in order to avoid duplicates
+    # returns a list of occasion IDs (link + price) from an existing file. These IDs will be compared with a new list in order to avoid duplicates
     csv_input = open(file_path, 'r', newline='', encoding='utf-8')
     reader = csv.DictReader(csv_input)
 
@@ -60,7 +60,7 @@ def csv_to_dict_list(file_path: str, headers: list) -> list:
 
 
 def write_data(data_file_path: str, data_list_with_duplicates: list, headers: list, sheet_name: str) -> None:
-    # append new lines to an existing file or create a new one
+    # appends new lines to an existing file or creates a new one
     # uses functions: csv_to_dict_list, remove_duplicates
     data_list = remove_duplicates(data_list_with_duplicates, headers)
     output_list = []
@@ -112,7 +112,7 @@ def check_titles_for_unwanted_expressions(title: str, unwanted_expressions: list
 
 def get_laptops_occasions(url: list[str, int, str], scrapping_dictionary: dict, searching_dictionary: dict, base_url: str, headers: list,
                           proxy_url: str, api_key: str, unwanted_expressions: list, restricted_max_page: bool or int) -> list[dict, ..., dict]:
-    # prepares arguments for the get_data_from_web function, checks if scraped data includes searched contents, creates a list with possibly duplicates
+    # prepares arguments for the get_data_from_web function, checks if the scraped data includes searched contents, creates a list with possibly duplicates
     # uses functions: get_data_from_web, check_titles_for_unwanted_expressions
     page_num = 0
     occasions_list = []
