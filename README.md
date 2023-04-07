@@ -2,6 +2,7 @@ This program scrapes offer data from allegro.pl, allegrolokalnie.pl and olx.pl .
 <br />Data scraping is legal but allegro.pl is blocking it, so to get around this, this scraper uses https://scrapeops.io/
 to constantly changing IP address while getting data from allegro.pl. 
 <br />
+<br />Currently the program is configured to search for good laptop offers on the 3 mentioned websites.
 <br />The whole scraped data is stored in laptop_occasions.csv and the newest data (the last search) is stored in new_laptop_occasions.xlsx
 <br />
 <br />
