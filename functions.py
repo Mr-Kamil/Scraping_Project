@@ -6,6 +6,8 @@ import csv
 import os
 import json
 import pandas as pd
+from selenium import webdriver
+import random
 
 today = str(datetime.datetime.today())[:-7]
 
@@ -15,26 +17,47 @@ def get_data_from_web(next_page: str, scrapping_dictionary: dict, proxy_url: str
     # scrapping_dictionary provides names of html elements that we want to scrap
     results = []
 
-    if re.search(r'allegro\.pl', next_page):
-        page = requests.get(url=proxy_url, params={'api_key': api_key, 'url': next_page})
-    else:
-        page = requests.get(next_page)
+    try:
+        if re.search(r'allegro\.pl', next_page):
+            chrome_options = webdriver.ChromeOptions()
+            chrome_options.add_argument("window-size=1920,1080")
+            chrome_options.add_argument("--headless")
 
-    print(page.status_code, next_page)
-    soup = BeautifulSoup(page.content, 'html.parser')
+            driver = webdriver.Chrome(options=chrome_options)
+            driver.get(next_page)
+            # input()
 
-    for position in scrapping_dictionary:
-        data = scrapping_dictionary[position]
+            driver.implicitly_wait(random.randint(3, 5))
+            page = driver.page_source
+            driver.quit()
+            print(next_page)
+            soup = BeautifulSoup(page, 'html.parser')
 
-        if position == 'urls_allegro':
-            results.append([re.split('" href="|" title="', str(a))[1] for a in soup.find_all(data[0], class_=data[1])])
-        elif position == 'max_page_all_lok':
-            results.append(json.loads(soup.find(scrapping_dictionary[position][0],
-                                                {scrapping_dictionary[position][1]: True})[scrapping_dictionary[position][1]])[scrapping_dictionary[position][2]])
-        elif position != 'urls':
-            results.append([a.get_text() for a in soup.find_all(data[0], class_=data[1])])
+            # page = requests.get(url=proxy_url, params={'api_key': api_key, 'url': next_page})
+
         else:
-            results.append([a['href'] for a in soup.find_all(data[0], class_=data[1])])
+            page = requests.get(next_page)
+            print(page.status_code, type(page.status_code), next_page)
+            soup = BeautifulSoup(page.content, 'html.parser')
+
+
+        for position in scrapping_dictionary:
+            data = scrapping_dictionary[position]
+
+            if position == 'urls_allegro':
+                results.append([re.split('" href="|" title="', str(a))[1] for a in soup.find_all(data[0], class_=data[1])])
+            elif position == 'max_page_all_lok':
+                results.append('blabla')
+                # results.append(json.loads(soup.find(scrapping_dictionary[position][0],
+                #                                     {scrapping_dictionary[position][1]: True})[scrapping_dictionary[position][1]])[scrapping_dictionary[position][2]])
+            elif position != 'urls':
+                results.append([a.get_text() for a in soup.find_all(data[0], class_=data[1])])
+            else:
+                results.append([a['href'] for a in soup.find_all(data[0], class_=data[1])])
+
+    except:
+        print('ERROR')
+        return ['', '', '', '']
 
     return results
 
@@ -100,7 +123,7 @@ def make_xlsx_file(input_data: list[dict, ..., dict], data_file_path: str, sheet
         column_width = max(df[column].astype(str).map(len).max(), len(column)) + 1
         writer.sheets[sheet_name].set_column(i, i, column_width)
 
-    writer.save()
+    writer._save()
 
 
 def check_titles_for_unwanted_expressions(title: str, unwanted_expressions: list) -> bool:
@@ -129,9 +152,9 @@ def get_laptops_occasions(url: list[str, int, str], scrapping_dictionary: dict, 
             else:
                 max_page = int(max_pages[-1]) if (type(max_pages) == list and len(max_pages) > 1) else max_pages
 
-        if re.search(r'allegro\.pl', next_page) and page_num == 10:  # scrap allegro.pl only for pages 0-10 and 55-70
-            page_num = 55
-            max_page = 70
+        if re.search(r'allegro\.pl', next_page) and page_num == 6:  # scrap allegro.pl only for pages 0-10 and 55-70
+            page_num = 45
+            max_page = 60
 
         for n in range(len(titles)):
             if check_titles_for_unwanted_expressions(titles[n], unwanted_expressions):
